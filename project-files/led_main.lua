@@ -1,0 +1,126 @@
+-- GPIO
+WS2812_PIN = 4
+gpio.mode(WS2812_PIN, gpio.OUTPUT)
+
+-- Pick temp range (max and min)
+TEMP_SCALE = "c" -- Celcius
+TEMP_MAX = 44.0
+TEMP_MIN = -7.0
+
+-- Temperature Color Table in form of Inverse HSV Gradient. Colors scale from
+-- 0x0000FF (pure hex blue) to 0xFF0000 (pure hex red). This table was
+-- generated based off this tool: http://www.perbang.dk/rgbgradient/
+
+-- Convert temperature lookup table to a string once for strip
+-- writing.
+--TEMP_COLOR_LUT = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWX"
+
+-- This is a big friggin' LUT. Annoying to modify. Look into algo to just
+-- generate this on the fly with args COLD_COLOR, HOT_COLOR, TOTAL_VALS, and
+-- maybe gradient algorithm (RGB, HSV, HSL, and their inverses)
+TEMP_COLOR_LUT = 
+  string.char(unpack({
+    0x00, 0x00, 0xFF,
+    0x00, 0x11, 0xFF,
+    0x00, 0x22, 0xFF,
+    0x00, 0x33, 0xFF,
+    0x00, 0x45, 0xFF,
+    0x00, 0x56, 0xFF,
+    0x00, 0x67, 0xFF,
+    0x00, 0x79, 0xFF,
+    0x00, 0x8A, 0xFF,
+    0x00, 0x9B, 0xFF,
+    0x00, 0xAC, 0xFF,
+    0x00, 0xBE, 0xFF,
+    0x00, 0xCF, 0xFF,
+    0x00, 0xE0, 0xFF,
+    0x00, 0xF2, 0xFF,
+    0x00, 0xFF, 0xFA,
+    0x00, 0xFF, 0xE9,
+    0x00, 0xFF, 0xD8,
+    0x00, 0xFF, 0xC6,
+    0x00, 0xFF, 0xB5,
+    0x00, 0xFF, 0xA4,
+    0x00, 0xFF, 0x92,
+    0x00, 0xFF, 0x81,
+    0x00, 0xFF, 0x70,
+    0x00, 0xFF, 0x5F,
+    0x00, 0xFF, 0x4D,
+    0x00, 0xFF, 0x3C,
+    0x00, 0xFF, 0x2B,
+    0x00, 0xFF, 0x19,
+    0x00, 0xFF, 0x08,
+    0x08, 0xFF, 0x00,
+    0x19, 0xFF, 0x00,
+    0x2B, 0xFF, 0x00,
+    0x3C, 0xFF, 0x00,
+    0x4D, 0xFF, 0x00,
+    0x5F, 0xFF, 0x00,
+    0x70, 0xFF, 0x00,
+    0x81, 0xFF, 0x00,
+    0x92, 0xFF, 0x00,
+    0xA4, 0xFF, 0x00,
+    0xB5, 0xFF, 0x00,
+    0xC6, 0xFF, 0x00,
+    0xD8, 0xFF, 0x00,
+    0xE9, 0xFF, 0x00,
+    0xFA, 0xFF, 0x00,
+    0xFF, 0xF2, 0x00,
+    0xFF, 0xE0, 0x00,
+    0xFF, 0xCF, 0x00,
+    0xFF, 0xBE, 0x00,
+    0xFF, 0xAC, 0x00,
+    0xFF, 0x9B, 0x00,
+    0xFF, 0x8A, 0x00,
+    0xFF, 0x79, 0x00,
+    0xFF, 0x67, 0x00,
+    0xFF, 0x56, 0x00,
+    0xFF, 0x45, 0x00,
+    0xFF, 0x33, 0x00,
+    0xFF, 0x22, 0x00,
+    0xFF, 0x11, 0x00,
+    0xFF, 0x00, 0x00
+  }))
+
+-- Determine position of relative temperature indicator
+function temp_position(temp)
+  local pos
+  local t
+
+  -- Check if temp is in correct range. Stupid Lua trick adapted from
+  -- http://lua-users.org/wiki/TernaryOperator
+  -- 'true' AND-ed with some_num is euqal to somenum while
+  -- 'false' AND-ed with some_num is qual to 'false'
+  -- The +0.001 is so that 'pos' never evaluates to zero during normalization
+  t = (temp > TEMP_MAX and TEMP_MAX) or 
+      (temp <= TEMP_MIN and TEMP_MIN + 0.001) or
+      temp
+
+  -- Normalize temp in range and scale to LED strip. It's just algebra, bruh.
+  pos = ((t - TEMP_MIN) * #TEMP_COLOR_LUT / 3.0) / (TEMP_MAX - TEMP_MIN)
+
+  -- Round up to nearest integer
+  return math.ceil(pos)
+end
+
+
+function update_led_strip(temp, on_off)
+  
+  local str_pos_end = 3 * temp_position(temp)
+  local ind_led = {
+    ["on"] = string.char(255,255,255),
+    ["off"] = string.char(0, 0, 0)}
+  --local displaced = TEMP_COLOR_LUT:sub(str_pos_end-2, str_pos_end)
+
+  assert(ind_led[on_off],
+    "\nERROR: On/Off argument for update_led_strip() not recognized.\n"..
+    "Options are \"on\" or \"off\".")
+
+  -- It doesn't toss errors if substrings are out of bounds! Holy cow!
+  ws2812.writergb(WS2812_PIN, 
+    TEMP_COLOR_LUT:sub(1, str_pos_end - 3)..
+    ind_led[on_off]..
+    TEMP_COLOR_LUT:sub(str_pos_end + 1)
+  )
+end
+-- dofile("led_main.lua"); update_led_strip(20, "on")

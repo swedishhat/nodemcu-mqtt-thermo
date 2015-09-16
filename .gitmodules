@@ -1,0 +1,6 @@
+[submodule "tools/luatool"]
+	path = tools/luatool
+	url = git@github.com:4refr0nt/luatool.git
+[submodule "tools/esptool"]
+	path = tools/esptool
+	url = git@github.com:themadinventor/esptool.git
