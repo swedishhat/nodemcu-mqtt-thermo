@@ -1,3 +1,0 @@
-floating point
-
-node file gpio wifi tmr uart mqtt

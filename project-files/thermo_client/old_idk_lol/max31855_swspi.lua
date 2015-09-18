@@ -6,23 +6,13 @@
 -- by Patrick Lloyd
 
 
-local max31855_softspi = {}
-
 ----------------------------
 -- MODULE-SCOPE VARIABLES --
 ----------------------------
 
--- GPIO to be bit-banged
-local cs_pin = 0
-local miso_pin = 0
-local sck_pin = 0
-
--- Control flags for various  
-local setup_complete = false
-local reading_bus = true
 
 -- Container table for bit-banged SPI data
-local raw = {}
+
 
 
 ---------------------------
@@ -31,7 +21,7 @@ local raw = {}
 
 
 -- Bit-bang SPI bus to update 'raw' table
-local function read32()
+function _read32()
   -- Setting this flag allows functions to wait for data in a blocking loop
   reading_bus = true
   
@@ -58,7 +48,7 @@ end
 -- Only used for bin-to-hex conversion here but I'm leaving the generic
 -- function because it's really cool! Based off of this function here:
 -- http://giderosmobile.com/forum/discussion/comment/23186#Comment_23186
-function base2base(in_num, in_base, out_base)
+function _base2base(in_num, in_base, out_base)
   -- Intermediate base change to 10
   local dec = tonumber(in_num, in_base)
 
@@ -85,9 +75,8 @@ function base2base(in_num, in_base, out_base)
 end
 
 
--- Decodes temperature values either for TC or reference junction depending
--- on the bit width
-function temp_decode(bin_value, temp_scale)
+-- Decodes temperature values either for TC or reference junction depending on the bit width
+function _temp_decode(bin_value, temp_scale)
   
   -- Ignore sign bit for now and convert to decimal number
   local temp_c = tonumber(string.sub(bin_value, 2), 2)
@@ -105,17 +94,13 @@ function temp_decode(bin_value, temp_scale)
   end
 
   -- Dump output values into a table
-  temp_calc = {
-    ["c"] = temp_c,
-    ["f"] = (temp_c * (9 / 5)) + 32
-  }
+  -- temp_calc = {["c"] = temp_c, ["f"] = (temp_c * (9 / 5)) + 32}
 
   -- Make sure that you actually have the right arguments before you get output
-  assert(temp_calc[temp_scale],
-    "\nERROR: Temp scale argument for max31855_softspi.temp() not recognized.\n"..
-    "Options are \"c\" for Celcius or \"f\" for fahrenheit.")
+  --assert(temp_calc[temp_scale],
+  --  "\nERROR: Temp scale argument for max31855_swspi.temp() not recognized.\nOptions are \"c\" for Celcius or \"f\" for fahrenheit.")
 
-  return temp_calc[temp_scale]
+  return temp_c
 end
 
 
@@ -125,7 +110,7 @@ end
 
 
 -- Setup function to set GPIO and update 'raw' once
-function max31855_softspi.setup(user_cs, user_miso, user_sck)
+function max31855_swspi_setup(user_cs, user_miso, user_sck)
   -- Give the rest of this module's functions access to the SoftSPI pins
   cs_pin = user_cs
   miso_pin = user_miso
@@ -143,84 +128,18 @@ function max31855_softspi.setup(user_cs, user_miso, user_sck)
   setup_complete = true
 
   -- Do a single read of the device to load up 'raw'
-  read32()
+  _read32()
   while reading_bus do end
 end  
 
-
--- Print raw data in various formats. This does not update the 'raw' variable
--- so that if there is an intermittent error on the bus, you can check the
--- bits without potentially overwriting the error message 
-function max31855_softspi.raw(format)
-  assert(setup_complete,
-    "\nERROR: Setup flag has not been set for max31855_softspi.setup()"..
-    " function. Please run before continuing.")
-
-  -- String to be filled and formatted
-  local raw_out = ""
-
-  -- Table of functions (coming from C, this concept blew my mind) that do the
-  -- actual formatting of the output string
-  printformat = {
-    -- Raw bits, no frills
-    ["bit"] = 
-    function (x) raw_out = table.concat(raw) end,
-
-    -- Same data as "bit" but with some helpful spacing
-    ["bin"] =
-    function (x)
-        raw_out = "0b "..
-        table.concat(raw, "", 1, 14).." "..   -- TC temp and sign
-        table.concat(raw, "", 15, 15).." "..  -- Reserved
-        table.concat(raw, "", 16, 16).." "..  -- Fault bit
-        table.concat(raw, "", 17, 28).." "..  -- Ref junc temp
-        table.concat(raw, "", 29, 29).." "..  -- Reserved
-        table.concat(raw, "", 30, 32)         -- Fault Codes
-    end,
-
-    -- Just converts the 32 bit word into four bytes. There is no special
-    -- formatting with respect to bit meaning
-    ["hex"] = 
-    function (x)
-        -- Uses that cool private base2base function above
-        raw_out = 
-        "0x"..
-        base2base(table.concat(raw, "", 1, 4), 2, 16)..
-        base2base(table.concat(raw, "", 5, 8), 2, 16).." "..
-        "0x"..
-        base2base(table.concat(raw, "", 9, 12), 2, 16)..
-        base2base(table.concat(raw, "", 13, 16), 2, 16).." "..
-        "0x"..
-        base2base(table.concat(raw, "", 17, 20), 2, 16)..
-        base2base(table.concat(raw, "", 21, 24), 2, 16).." "..
-        "0x"..
-        base2base(table.concat(raw, "", 25, 28), 2, 16)..
-        base2base(table.concat(raw, "", 29, 32), 2, 16)
-    end
-}
-
-  assert(printformat[format],
-    "\nERROR: Format argument for max31855_softspi.raw() not recognized.\n"..
-    "Options are \"bit\", \"bin\"or \"hex\".")
-  
-  -- Update the output variable by running the corresponding table function
-  printformat[format]()
-  
-  return raw_out
-end
 
 -- Return a table with floating point temperature values and the error bits
 -- Sometimes you will get ridiculous (yet legal) temperature values when
 -- certain errors happen. This puts error checking responsibility on the
 -- receiving system, if it cares about such things.
-function max31855_softspi.temp(dev, temp_scale)
-  -- Check setup
-  assert(setup_complete,
-    "\nERROR: Setup flag has not been set for max31855_softspi.setup()"..
-    " function.\nSetup device before continuing.")
-
+function max31855_swspi_temp(dev, temp_scale)
   -- Update 'raw' data and wait for it to finish
-  read32()
+  _read32()
   while reading_bus do end
 
   -- Load a table with temp data from thermocouple and reference junction
@@ -231,17 +150,14 @@ function max31855_softspi.temp(dev, temp_scale)
 
   -- Make sure the argument is legal
   assert(device_temp[dev],
-    "\nERROR: Device argument for max31855_softspi.temp() not recognized.\n"..
+    "\nERROR: Device argument for max31855_swspi.temp() not recognized.\n"..
     "Options are \"tc\" for thermocouple or \"rj\" for Reference Junction.")
 
   -- Get the floating point temperature value and error codes
   local temp = {
-    ["value"] = temp_decode(device_temp[dev], temp_scale),
+    ["value"] = _temp_decode(device_temp[dev], temp_scale),
     ["err"] = table.concat(raw, "", 30, 32)
   }
 
   return temp
 end
-
--- And Bob's your uncle
-return max31855_softspi
