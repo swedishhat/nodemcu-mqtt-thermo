@@ -9,8 +9,8 @@
 PIN_WS2812 = 4  -- This is GPIO2 on ESP8266. No idea why NodeMCU does this...
 
 -- WiFi
-WIFI_SSID = "tacocat2"
-WIFI_PASS = "42palindromes"
+WIFI_SSID = ""
+WIFI_PASS = ""
 
 -- MQTT
 -- Sub topics to subscribe to and what functions they run in main.lua
@@ -18,7 +18,7 @@ WIFI_PASS = "42palindromes"
 MQTT_CLIENTID   = "esp-led"
 MQTT_HOST       = "192.168.2.5"
 MQTT_PORT       = 1883
-MQTT_CMDTIME_MS = 500
+MQTT_CMDTIME_MS = 50
 
 -- Upper and lower temperature bounds for comfort (deg C)
 TEMP_MAX = 44.0     -- Too hot!

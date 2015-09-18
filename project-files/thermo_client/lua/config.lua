@@ -10,8 +10,8 @@ PIN_MISO = 2
 PIN_CS = 3
 
 -- WiFi
-WIFI_SSID = "tacocat2"
-WIFI_PASS = "42palindromes"
+WIFI_SSID = ""
+WIFI_PASS = ""
 
 -- MQTT
 MQTT_CLIENTID   = "esp-therm"
