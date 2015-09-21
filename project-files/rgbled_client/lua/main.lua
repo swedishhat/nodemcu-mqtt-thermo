@@ -1,3 +1,6 @@
+-- main.lua for led strip
+-- by Patrick Lloyd
+
 --------------------------------
 -- HARDWARE CONTROL FUNCTIONS --
 --------------------------------

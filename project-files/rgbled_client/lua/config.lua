@@ -1,4 +1,4 @@
--- config.lua for Light Strip
+-- config.lua for light strip
 -- by Patrick Lloyd
 
 -- Global variable configuration file for better portability
@@ -13,10 +13,8 @@ WIFI_SSID = ""
 WIFI_PASS = ""
 
 -- MQTT
--- Sub topics to subscribe to and what functions they run in main.lua
-
 MQTT_CLIENTID   = "esp-led"
-MQTT_HOST       = "192.168.2.5"
+MQTT_HOST       = ""
 MQTT_PORT       = 1883
 MQTT_CMDTIME_MS = 50
 

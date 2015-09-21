@@ -1,3 +1,6 @@
+-- main.lua for thermometer
+-- by Patrick Lloyd
+
 --------------------------------
 -- HARDWARE CONTROL FUNCTIONS --
 --------------------------------

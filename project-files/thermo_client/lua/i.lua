@@ -1,14 +1,13 @@
---[[
-init_man.lua
-by Patrick Lloyd
+-- i.lua for thermometer
+-- by Patrick Lloyd
 
-Actual init file, but named something other than init.lua in order to 
-manually test and debug initialization code.
-]]
+-- Init file, but named something other than init.lua in order to 
+-- manually test and debug initialization code.
 
 -- Load all the global user-defined variables
 dofile("config.lua")
 
+-- Create system info table and a function to fill it up
 sys_info = {}
 
 function get_sys_info()
@@ -68,16 +67,16 @@ tmr.alarm(0, 1000, 1, function()
     get_sys_info()
     
     -- Print all the system info
-    --print("\n---- System Info ----")
-    --for keys, vals in pairs(sys_info["sys"]) do print(keys..":\t"..vals) end
-    --print("")
+    print("\n---- System Info ----")
+    for keys, vals in pairs(sys_info["sys"]) do print(keys..":\t"..vals) end
+    print("")
 
   	-- Print all the WiFi info
     print("\n---- WiFi Info ----")
     for key, val in pairs(sys_info.wifi) do print(key..":\t"..val) end
     print("")
 
-    tmr.stop(0)		      -- Stop the WiFi connect alarm
+    tmr.stop(0)         -- Stop the WiFi connect alarm
     dofile("main.lua")  -- Run the main function
    	end
 end)

@@ -1,6 +1,10 @@
+-- mqtt.lua for thermometer
+-- by Patrick Lloyd
+
 --------------------
 -- MQTT SEMAPHORE --
 --------------------
+-- Brevity is the soul of wit. I should write shorter poems...
 --print("Hear\nme dear,\ndare I ask you for\na way to write a semaphore\nto queue a table with topics thus\n"..
 --"and reduce thy table to digital dust?\nFor time to make a required action\ndelays a timely satisfaction.\n"..
 --"But as much as the thought\nof this bothers me ought,\nI cannot avoid it\none little bit.\nNeed a queue?\n"..
